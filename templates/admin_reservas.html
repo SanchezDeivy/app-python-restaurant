@@ -1,0 +1,367 @@
+{% extends "admin_layout.html" %}
+
+{% block title %}Gestión de Reservas{% endblock %}
+
+{% block content %}
+
+<header class="mb-8 border-b pb-4 border-gray-300 flex justify-between items-center">
+    <div>
+        <h1 class="text-4xl font-bold text-secondary flex items-center space-x-3">
+            <i class="fas fa-calendar-check text-primary"></i>
+            <span>Gestión de Reservas</span>
+        </h1>
+        <p class="text-gray-500 mt-1">Todas las solicitudes y confirmaciones de mesa.</p>
+    </div>
+    <!-- <button
+        class="bg-primary text-secondary font-bold py-2 px-6 rounded-full shadow-md transition duration-300 hover:bg-yellow-400 flex items-center space-x-2">
+        <i class="fas fa-plus"></i>
+        <span>Añadir Reserva</span>
+    </button> -->
+</header>
+
+
+<div class="bg-white p-4 rounded-xl shadow-lg overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hora</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Personas</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones
+                </th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+
+            {% for res in reservations %}
+            <tr class="hover:bg-gray-50 transition duration-150">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-secondary">#{{ res.id }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold" title="{{ res.email }}">{{
+                    res.name }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ res.fecha }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-primary font-bold">{{ res.hora }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ res.guests }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+
+                    {% set status_lower = res.status | lower %}
+
+                    {% if status_lower == 'confirmada' or status_lower == 'completada' %}
+                    {% set badge_class = 'bg-green-100 text-green-800' %}
+                    {% elif status_lower == 'pendiente' %}
+                    {% set badge_class = 'bg-yellow-100 text-yellow-800' %}
+                    {% elif status_lower == 'cancelada' or status_lower == 'no_asistio' %}
+                    {% set badge_class = 'bg-red-100 text-red-800' %}
+                    {% else %}
+                    {% set badge_class = 'bg-gray-100 text-gray-800' %}
+                    {% endif %}
+
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ badge_class }}">
+                        {{ res.status | capitalize }}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+
+                    <button class="btn-open-modal text-primary hover:text-yellow-600" title="Ver Detalles"
+                        data-id="{{ res.id }}" data-mode="view">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn-open-modal text-blue-600 hover:text-blue-800" title="Editar"
+                        data-id="{{ res.id }}" data-mode="edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+
+                    {% if res.status == 'pendiente' %}
+                    <button data-id="{{ res.id }}" data-action="confirmada"
+                        class="btn-action text-green-600 hover:text-green-800" title="Aprobar Reserva">
+                        <i class="fas fa-check-circle"></i>
+                    </button>
+                    {% elif res.status == 'confirmada' %}
+                    <button data-id="{{ res.id }}" data-action="cancelada"
+                        class="btn-action text-red-600 hover:text-red-800" title="Cancelar Reserva">
+                        <i class="fas fa-times-circle"></i>
+                    </button>
+                    {% else %}
+                    <button class="text-gray-400 cursor-not-allowed" title="Acción no disponible" disabled>
+                        <i class="fas fa-lock"></i>
+                    </button>
+                    {% endif %}
+
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7" class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">No hay reservas
+                    registradas en la base de datos.</td>
+            </tr>
+            {% endfor %}
+
+        </tbody>
+    </table>
+</div>
+
+<div class="mt-4 flex justify-between items-center bg-white p-4 rounded-xl shadow-lg">
+    <p class="text-sm text-gray-700">
+        Mostrando <span class="font-medium">1</span> a <span class="font-medium">{{ reservations|length }}</span> de
+        <span class="font-medium">{{ reservations|length }}</span> resultados
+    </p>
+    <div class="flex space-x-1">
+        <button class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">
+            Anterior
+        </button>
+        <button class="px-4 py-2 text-sm font-medium text-secondary bg-primary rounded-lg hover:bg-yellow-400">
+            1
+        </button>
+        <button class="px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-lg hover:bg-gray-100">
+            Siguiente
+        </button>
+    </div>
+</div>
+
+<div id="reservation-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-lg p-6 m-4">
+        <div class="flex justify-between items-center pb-3 border-b">
+            <h3 class="text-2xl font-bold text-secondary" id="modal-title">Detalles de Reserva #<span
+                    id="res-id-title"></span></h3>
+            <button id="close-modal-icon"
+                class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
+        </div>
+
+        <form id="reservation-form" class="mt-4">
+            <input type="hidden" id="res-id-input" name="id">
+
+            <div class="mb-4">
+                <label for="name" class="block text-sm font-medium text-gray-700">Nombre del Cliente</label>
+                <input type="text" id="name" name="name" required
+                    class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary">
+            </div>
+
+            <div class="mb-4">
+                <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                <input type="email" id="email" name="email" required
+                    class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label for="fecha" class="block text-sm font-medium text-gray-700">Fecha</label>
+                    <input type="date" id="fecha" name="fecha" required
+                        class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary">
+                </div>
+                <div>
+                    <label for="hora" class="block text-sm font-medium text-gray-700">Hora</label>
+                    <input type="time" id="hora" name="hora" required
+                        class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary">
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label for="guests" class="block text-sm font-medium text-gray-700">Personas</label>
+                <input type="number" id="guests" name="guests" min="1" required
+                    class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary">
+            </div>
+
+            <div class="mb-4">
+                <label for="status" class="block text-sm font-medium text-gray-700">Estado</label>
+                <select id="status" name="status"
+                    class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary">
+                    <option value="pendiente">Pendiente</option>
+                    <option value="confirmada">Confirmada</option>
+                    <option value="cancelada">Cancelada</option>
+                    <option value="completada">Completada</option>
+                    <option value="no_asistio">No Asistió</option>
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <label for="notas" class="block text-sm font-medium text-gray-700">Notas</label>
+                <textarea id="notas" name="notas" rows="3"
+                    class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"></textarea>
+            </div>
+
+            <div class="mt-6 pt-4 border-t flex justify-end">
+                <button type="submit" id="save-button"
+                    class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 hidden">
+                    Guardar Cambios
+                </button>
+                <button type="button" id="close-button"
+                    class="ml-2 bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 transition duration-300">
+                    Cerrar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const modal = document.getElementById('reservation-modal');
+        const closeModalButtonIcon = document.getElementById('close-modal-icon');
+        const closeButton = document.getElementById('close-button');
+        const form = document.getElementById('reservation-form');
+        const saveButton = document.getElementById('save-button');
+        const modalTitle = document.getElementById('modal-title');
+        const resIdTitle = document.getElementById('res-id-title');
+
+        // Función para abrir el modal, obtener datos y configurar modo
+        function openModal(id, mode) {
+            form.reset();
+            saveButton.classList.add('hidden');
+            modal.style.display = 'flex'; // Mostrar el modal
+
+            fetch(`/reservations/${id}`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Reserva no encontrada');
+                    return response.json();
+                })
+                .then(resData => {
+                    // 1. Llenar campos del formulario
+                    document.getElementById('res-id-input').value = resData.id;
+                    resIdTitle.textContent = resData.id;
+                    document.getElementById('name').value = resData.name || '';
+                    document.getElementById('email').value = resData.email || '';
+                    document.getElementById('fecha').value = resData.fecha || '';
+                    document.getElementById('hora').value = resData.hora || '';
+                    document.getElementById('guests').value = resData.guests || 1;
+                    document.getElementById('status').value = resData.status || 'pendiente';
+                    document.getElementById('notas').value = resData.notas || '';
+
+                    // 2. Configurar modo (Ver o Editar)
+                    const inputs = form.querySelectorAll('input:not([type="hidden"]), select, textarea');
+
+                    if (mode === 'view') {
+                        modalTitle.textContent = 'Detalles de Reserva #' + resData.id;
+                        inputs.forEach(input => {
+                            input.setAttribute('disabled', 'disabled');
+                            input.classList.add('bg-gray-100');
+                        });
+                        saveButton.classList.add('hidden');
+                    } else if (mode === 'edit') {
+                        modalTitle.textContent = 'Editar Reserva #' + resData.id;
+                        inputs.forEach(input => {
+                            input.removeAttribute('disabled');
+                            input.classList.remove('bg-gray-100');
+                        });
+                        saveButton.classList.remove('hidden');
+                    }
+
+                })
+                .catch(error => {
+                    alert('Error al cargar la reserva: ' + error.message);
+                    console.error('Fetch error:', error);
+                    modal.style.display = 'none';
+                });
+        }
+
+        // Función para cerrar el modal
+        function closeReservationModal() {
+            modal.style.display = 'none';
+        }
+
+        // --- Event Listeners ---
+
+        // 1. Abrir Modal (Ver Detalles o Editar)
+        document.querySelector('.min-w-full').addEventListener('click', function (e) {
+            const button = e.target.closest('.btn-open-modal');
+            if (!button) return;
+
+            const reservationId = button.dataset.id;
+            const mode = button.dataset.mode;
+
+            openModal(reservationId, mode);
+        });
+
+        // 2. Cerrar Modal
+        closeModalButtonIcon.addEventListener('click', closeReservationModal);
+        closeButton.addEventListener('click', closeReservationModal);
+        window.addEventListener('click', function (e) {
+            if (e.target === modal) {
+                closeReservationModal();
+            }
+        });
+
+        // 3. Guardar Cambios (PUT request)
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const reservationId = document.getElementById('res-id-input').value;
+            const url = `/reservations/${reservationId}`;
+
+            // Recolectar datos del formulario
+            const formData = new FormData(form);
+            const data = {};
+            formData.forEach((value, key) => {
+                data[key] = value;
+            });
+            delete data.id; // Ya va en la URL
+
+            fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => { throw new Error(err.error || 'Error al guardar.'); });
+                    }
+                    return response.json();
+                })
+                .then(res => {
+                    alert(res.message);
+                    closeReservationModal();
+                    window.location.reload(); // Recargar para ver el estado actualizado
+                })
+                .catch(error => {
+                    console.error('Error al guardar:', error);
+                    alert('No se pudieron guardar los cambios: ' + error.message);
+                });
+        });
+
+        // 4. Lógica existente para Aprobar/Cancelar (btn-action)
+        document.querySelector('.min-w-full').addEventListener('click', function (e) {
+
+            const button = e.target.closest('.btn-action');
+            if (!button) return;
+
+            const reservationId = button.dataset.id;
+            const action = button.dataset.action;
+
+            let message = (action === 'confirmada')
+                ? "¿Estás seguro de que quieres APROBAR esta reserva? (Deberás asignar mesa si es necesario)"
+                : "¿Estás seguro de que quieres CANCELAR esta reserva?";
+
+            if (confirm(message)) {
+
+                fetch(`/reservations/status/${reservationId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status: action })
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            return response.json();
+                        }
+                        throw new Error('Error en la petición de cambio de estado.');
+                    })
+                    .then(data => {
+                        alert(data.message);
+                        window.location.reload();
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Hubo un error al procesar la solicitud: ' + error.message);
+                    });
+            }
+        });
+    });
+</script>
+
+{% endblock %}

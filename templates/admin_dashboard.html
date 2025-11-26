@@ -1,0 +1,33 @@
+{% extends "admin_layout.html" %}
+
+{% block title %}Dashboard{% endblock %}
+{% block page_heading %}Panel de Administración{% endblock %}
+
+{% block content %}
+<h2 class="text-2xl font-bold mb-6 text-secondary">Resumen General</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+    <div class="bg-primary p-6 rounded-xl shadow-md text-secondary">
+        <p class="text-lg font-semibold">Reservas Hoy</p>
+        <p class="text-4xl font-extrabold mt-2">{{ stats.reservas_hoy }}</p>
+        <i class="fas fa-calendar-alt float-right text-4xl opacity-50"></i>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-red-500">
+        <p class="text-lg font-semibold text-gray-700">Reservas Pendientes</p>
+        <p class="text-4xl font-extrabold mt-2 text-red-500">{{ stats.reservas_pendientes }}</p>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-blue-500">
+        <p class="text-lg font-semibold text-gray-700">Platos Activos</p>
+        <p class="text-4xl font-extrabold mt-2 text-blue-500">{{ stats.platos_activos }}</p>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-green-500">
+        <p class="text-lg font-semibold text-gray-700">Total Usuarios</p>
+        <p class="text-4xl font-extrabold mt-2 text-green-500">{{ stats.total_usuarios }}</p>
+    </div>
+
+</div>
+
+{% endblock %}
