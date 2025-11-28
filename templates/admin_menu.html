@@ -1,0 +1,317 @@
+{% extends "admin_layout.html" %}
+
+{% block title %}Gestión de Menú y Platos{% endblock %}
+
+{% block content %}
+
+<!-- Header y Botón de Acción -->
+<header class="mb-8 border-b pb-4 border-gray-300 flex justify-between items-center">
+    <div>
+        <h1 class="text-4xl font-bold text-secondary flex items-center space-x-3">
+            <i class="fas fa-utensils text-primary"></i>
+            <span>Gestión de Menú</span>
+        </h1>
+        <p class="text-gray-500 mt-1">Administra los platos disponibles y el menú del día.</p>
+    </div>
+    <button id="btn-open-modal-add"
+        class="bg-primary text-secondary font-bold py-2 px-6 rounded-full shadow-md transition duration-300 hover:bg-yellow-400 flex items-center space-x-2">
+        <i class="fas fa-plus"></i>
+        <span>Añadir Nuevo Plato</span>
+    </button>
+</header>
+
+<!-- Tabla de Platos Disponibles (Gestión) -->
+<div class="bg-white p-4 rounded-xl shadow-lg overflow-x-auto mb-8">
+    <h2 class="text-2xl font-semibold text-secondary mb-4 border-b pb-2">Catálogo de Platos</h2>
+    <table class="min-w-full divide-y divide-gray-200" id="platos-table">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones
+                </th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+
+            {% for plato in platos %}
+            <tr class="hover:bg-gray-50 transition duration-150" data-id="{{ plato.id }}">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-secondary">#{{ plato.id }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">{{ plato.nombre }}</td>
+                <!-- Modificado: Usar categoria_nombre para la vista -->
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ plato.categoria_nombre }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-bold">S/. {{ "%.2f" |
+                    format(plato.precio | float) }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+
+                    {% set status_lower = plato.status | lower %}
+
+                    {% if status_lower == 'disponible' %}
+                    {% set badge_class = 'bg-green-100 text-green-800' %}
+                    {% elif status_lower == 'agotado' %}
+                    {% set badge_class = 'bg-red-100 text-red-800' %}
+                    {% else %}
+                    {% set badge_class = 'bg-gray-100 text-gray-800' %}
+                    {% endif %}
+
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ badge_class }}">
+                        {{ plato.status | capitalize }}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+
+                    <!-- Botón Editar -->
+                    <button class="btn-open-modal text-blue-600 hover:text-blue-800" title="Editar Plato"
+                        data-id="{{ plato.id }}" data-mode="edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <!-- Botón Eliminar -->
+                    <button class="btn-delete-plato text-red-600 hover:text-red-800" title="Eliminar Plato"
+                        data-id="{{ plato.id }}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">No hay platos
+                    registrados.</td>
+            </tr>
+            {% endfor %}
+
+        </tbody>
+    </table>
+</div>
+
+
+<!-- Modal para Crear/Editar Plato -->
+<div id="plato-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-lg p-6 m-4">
+        <div class="flex justify-between items-center pb-3 border-b">
+            <h3 class="text-2xl font-bold text-secondary" id="plato-modal-title"></h3>
+            <button id="close-plato-modal-icon"
+                class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
+        </div>
+
+        <form id="plato-form" class="mt-4">
+            <input type="hidden" id="plato-id" name="id">
+
+            <div class="mb-4">
+                <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre del Plato</label>
+                <input type="text" id="nombre" name="nombre" required
+                    class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary">
+            </div>
+
+            <div class="mb-4">
+                <label for="categoria_id" class="block text-sm font-medium text-gray-700">Categoría</label>
+                <!-- Modificado: Usar categoria_id para el campo -->
+                <select id="categoria_id" name="categoria_id" required
+                    class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary">
+                    {% for cat in categorias %}
+                    <option value="{{ cat.id }}">{{ cat.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label for="precio" class="block text-sm font-medium text-gray-700">Precio (S/.)</label>
+                    <input type="number" step="0.01" min="0" id="precio" name="precio" required
+                        class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary">
+                </div>
+                <div>
+                    <label for="status" class="block text-sm font-medium text-gray-700">Estado</label>
+                    <!-- Modificado: Usar los ENUM de la base de datos (disponible, agotado, descontinuado) -->
+                    <select id="status" name="status"
+                        class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary">
+                        <option value="disponible">Disponible</option>
+                        <option value="agotado">Agotado</option>
+                        <option value="descontinuado">Descontinuado</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label for="descripcion" class="block text-sm font-medium text-gray-700">Descripción</label>
+                <textarea id="descripcion" name="descripcion" rows="3"
+                    class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"></textarea>
+            </div>
+
+            <div class="mt-6 pt-4 border-t flex justify-end">
+                <button type="submit" id="plato-save-button"
+                    class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg shadow-md hover:bg-blue-700 transition duration-300">
+                    Guardar Plato
+                </button>
+                <button type="button" id="plato-close-button"
+                    class="ml-2 bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 transition duration-300">
+                    Cerrar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const modal = document.getElementById('plato-modal');
+        const closeModalIcon = document.getElementById('close-plato-modal-icon');
+        const closeButton = document.getElementById('plato-close-button');
+        const form = document.getElementById('plato-form');
+        const modalTitle = document.getElementById('plato-modal-title');
+        const saveButton = document.getElementById('plato-save-button');
+        const platosTable = document.getElementById('platos-table');
+
+        // Elementos del formulario que cambiaron el nombre
+        const categoriaIdInput = document.getElementById('categoria_id');
+
+        // Función para cerrar el modal
+        function closePlatoModal() {
+            modal.style.display = 'none';
+            form.reset();
+        }
+
+        // Función para abrir el modal en modo Crear o Editar
+        function openModal(mode, id = null) {
+            form.reset();
+            modal.style.display = 'flex';
+            const isEdit = mode === 'edit';
+
+            if (isEdit) {
+                modalTitle.textContent = 'Editar Plato';
+                saveButton.textContent = 'Guardar Cambios';
+                document.getElementById('plato-id').value = id;
+
+                // Cargar datos del plato
+                fetch(`/api/platos/${id}`)
+                    .then(response => {
+                        if (!response.ok) throw new Error('Plato no encontrado');
+                        return response.json();
+                    })
+                    .then(platoData => {
+                        document.getElementById('nombre').value = platoData.nombre;
+                        document.getElementById('descripcion').value = platoData.descripcion || '';
+                        document.getElementById('precio').value = platoData.precio;
+                        // Modificado: Asignar categoria_id
+                        categoriaIdInput.value = platoData.categoria_id;
+                        document.getElementById('status').value = platoData.status;
+                    })
+                    .catch(error => {
+                        alert('Error al cargar el plato: ' + error.message);
+                        console.error('Fetch error:', error);
+                        closePlatoModal();
+                    });
+
+            } else {
+                modalTitle.textContent = 'Añadir Nuevo Plato';
+                saveButton.textContent = 'Crear Plato';
+                document.getElementById('plato-id').value = ''; // Asegurar que está vacío para POST
+            }
+        }
+
+        // --- Event Listeners ---
+
+        // 1. Abrir modal para CREAR
+        document.getElementById('btn-open-modal-add').addEventListener('click', () => openModal('add'));
+
+        // 2. Abrir modal para EDITAR (usando delegación de eventos)
+        platosTable.addEventListener('click', function (e) {
+            const editButton = e.target.closest('.btn-open-modal[data-mode="edit"]');
+            if (!editButton) return;
+
+            const platoId = editButton.dataset.id;
+            openModal('edit', platoId);
+        });
+
+        // 3. Cerrar Modal
+        closeModalIcon.addEventListener('click', closePlatoModal);
+        closeButton.addEventListener('click', closePlatoModal);
+        window.addEventListener('click', function (e) {
+            if (e.target === modal) {
+                closePlatoModal();
+            }
+        });
+
+        // 4. Enviar Formulario (Crear/Editar)
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const platoId = document.getElementById('plato-id').value;
+            const isEditing = !!platoId;
+            const url = isEditing ? `/api/platos/${platoId}` : '/api/platos';
+            const method = isEditing ? 'PUT' : 'POST';
+
+            // Recolectar datos
+            const formData = new FormData(form);
+            const data = {};
+            formData.forEach((value, key) => {
+                if (key !== 'id') { // Excluir el ID del cuerpo para PUT/POST
+                    data[key] = value;
+                }
+            });
+
+            // Conversiones necesarias
+            data.precio = parseFloat(data.precio);
+            data.categoria_id = parseInt(data.categoria_id);
+
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => { throw new Error(err.error || `Error al ${isEditing ? 'editar' : 'crear'} el plato.`); });
+                    }
+                    return response.json();
+                })
+                .then(res => {
+                    alert(res.message);
+                    closePlatoModal();
+                    window.location.reload();
+                })
+                .catch(error => {
+                    console.error('Error al guardar plato:', error);
+                    alert('No se pudieron guardar los cambios: ' + error.message);
+                });
+        });
+
+        // 5. Eliminar Plato
+        platosTable.addEventListener('click', function (e) {
+            const deleteButton = e.target.closest('.btn-delete-plato');
+            if (!deleteButton) return;
+
+            const platoId = deleteButton.dataset.id;
+
+            if (confirm(`¿Estás seguro de que quieres eliminar el plato #${platoId}? Esta acción es irreversible.`)) {
+                fetch(`/api/platos/${platoId}`, {
+                    method: 'DELETE',
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(err => { throw new Error(err.error || 'Error al eliminar el plato.'); });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        alert(data.message);
+                        window.location.reload();
+                    })
+                    .catch(error => {
+                        console.error('Error al eliminar:', error);
+                        alert('Hubo un error al eliminar el plato: ' + error.message);
+                    });
+            }
+        });
+
+    });
+</script>
+
+{% endblock %}

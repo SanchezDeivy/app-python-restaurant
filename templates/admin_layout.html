@@ -24,6 +24,12 @@
                 class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-700 transition duration-150 {% if request.endpoint == 'admin_menu' %}bg-gray-700{% endif %}">
                 <i class="fas fa-utensils"></i> <span>Menú</span>
             </a>
+
+            <a href="{{ url_for('admin_menu_del_dia') }}"
+                class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-700 transition duration-150 {% if request.endpoint == 'admin_menu_del_dia' %}bg-gray-700{% endif %}">
+                <i class="fas fa-calendar-day"></i> <span>Menú del Día</span>
+            </a>
+
             <a href="{{ url_for('admin_reservas') }}"
                 class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-700 transition duration-150 {% if request.endpoint == 'admin_reservas' %}bg-gray-700{% endif %}">
                 <i class="fas fa-calendar-check"></i> <span>Reservas</span>
