@@ -1,168 +1,258 @@
--- SCRIPT SQL FINAL: RESERVAS SIN SELECCIÓN DE MESA NI LOGIN REQUERIDO
-DROP DATABASE IF EXISTS sumak_mikuy;
-CREATE DATABASE sumak_mikuy CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE sumak_mikuy;
+create table if not exists categorias_menu
+(
+    id     int auto_increment
+        primary key,
+    nombre varchar(100)                                 not null,
+    status enum ('activo', 'inactivo') default 'activo' null,
+    orden  int                         default 99       null,
+    constraint nombre
+        unique (nombre)
+);
 
--- ------------------------------
--- TABLAS MAESTRAS OPTIMIZADAS
--- ------------------------------
+create table if not exists menus
+(
+    id             int auto_increment
+        primary key,
+    nombre         varchar(100)                                                         not null,
+    precio         decimal(10, 2)                                                       not null comment 'Precio fijo del menú completo',
+    descripcion    text                                                                 null,
+    fecha_creacion timestamp                                default current_timestamp() not null,
+    status         enum ('activo', 'inactivo', 'archivado') default 'activo'            not null,
+    constraint nombre
+        unique (nombre)
+);
 
--- TABLA: usuarios (Simplificada para Login/Rol)
-CREATE TABLE usuarios (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nombres VARCHAR(100) NOT NULL,
-    apellidos VARCHAR(100) NOT NULL,
-    email VARCHAR(100) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    provider ENUM('local', 'google', 'facebook') DEFAULT 'local',
-    rol ENUM('cliente', 'admin', 'mesero', 'cocina') DEFAULT 'cliente' NOT NULL,
-    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status ENUM('activo', 'inactivo', 'suspendido') DEFAULT 'activo',
-    INDEX idx_email(email),
-    INDEX idx_rol(rol)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+create table if not exists menu_del_dia_actual
+(
+    id          int                          default 1        not null
+        primary key,
+    menu_id     int                                           null comment 'Referencia al menú del día vigente',
+    fecha       date                                          not null,
+    status      enum ('activo', 'archivado') default 'activo' null,
+    precio_fijo decimal(10, 2)               default 0.00     not null,
+    constraint menu_id
+        unique (menu_id),
+    constraint menu_del_dia_actual_ibfk_1
+        foreign key (menu_id) references menus (id)
+);
 
-INSERT INTO usuarios (nombres, apellidos, email, password, rol) VALUES
-('Juan', 'Pérez', 'juan.perez@gmail.com', 'hashed_pass', 'cliente'),
-('María', 'González', 'maria.gonzalez@hotmail.com', 'hashed_pass', 'admin'),
-('Pedro', 'Torres', 'pedro.torres@gmail.com', 'hashed_pass', 'mesero');
+create index if not exists idx_nombre
+    on menus (nombre);
 
----
+create table if not exists mesas
+(
+    id          int auto_increment
+        primary key,
+    numero_mesa int                                                                  not null,
+    capacidad   int                                                                  not null,
+    ubicacion   enum ('interior', 'exterior', 'terraza', 'vip') default 'interior'   null,
+    status      enum ('disponible', 'ocupada', 'mantenimiento') default 'disponible' null,
+    constraint numero_mesa
+        unique (numero_mesa)
+);
 
--- TABLA: mesas (Status simplificado)
-CREATE TABLE mesas (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    numero_mesa INT NOT NULL UNIQUE,
-    capacidad INT NOT NULL,
-    ubicacion ENUM('interior','exterior','terraza','vip') DEFAULT 'interior',
-    descripcion VARCHAR(255),
-    status ENUM('disponible','ocupada','mantenimiento') DEFAULT 'disponible', 
-    INDEX idx_numero(numero_mesa)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+create index if not exists idx_numero
+    on mesas (numero_mesa);
 
-INSERT INTO mesas (numero_mesa, capacidad, ubicacion, status) VALUES
-(1,4,'interior','disponible'),
-(2,2,'interior','disponible'),
-(3,6,'exterior','disponible'),
-(4,4,'interior','ocupada');
+create table if not exists platos
+(
+    id                     int auto_increment
+        primary key,
+    categoria_id           int                                                                  not null,
+    nombre                 varchar(150)                                                         not null,
+    descripcion            text                                                                 not null,
+    precio                 decimal(10, 2)                                                       not null,
+    tiempo_preparacion_min int                                                                  null,
+    es_vegetariano         tinyint(1)                                      default 0            null,
+    status                 enum ('disponible', 'agotado', 'descontinuado') default 'disponible' null,
+    constraint platos_ibfk_1
+        foreign key (categoria_id) references categorias_menu (id)
+);
 
----
+create table if not exists detalle_menu_dia
+(
+    id             int auto_increment
+        primary key,
+    menu_dia_id    int           not null,
+    plato_id       int           not null,
+    tipo_plato_dia varchar(50)   not null,
+    orden          int default 0 null,
+    constraint unique_menu_plato
+        unique (menu_dia_id, plato_id),
+    constraint detalle_menu_dia_ibfk_1
+        foreign key (menu_dia_id) references menu_del_dia_actual (id)
+            on delete cascade,
+    constraint detalle_menu_dia_ibfk_2
+        foreign key (plato_id) references platos (id)
+);
 
--- TABLA: categorias_menu
-CREATE TABLE categorias_menu (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,
-    descripcion TEXT,
-    orden INT DEFAULT 0,
-    status ENUM('activo','inactivo') DEFAULT 'activo',
-    INDEX idx_orden(orden)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+create index if not exists plato_id
+    on detalle_menu_dia (plato_id);
 
-INSERT INTO categorias_menu (nombre, descripcion, orden) VALUES
-('Entradas','Entradas andinas',1),
-('Platos Principales','Platos típicos peruanos',2),
-('Bebidas','Bebidas típicas',5);
+create table if not exists detalle_menus
+(
+    id             int auto_increment
+        primary key,
+    menu_id        int                                             not null,
+    plato_id       int                                             not null,
+    tipo_plato_dia enum ('entrada', 'segundo', 'postre', 'bebida') not null,
+    constraint uk_menu_plato
+        unique (menu_id, plato_id),
+    constraint detalle_menus_ibfk_1
+        foreign key (menu_id) references menus (id)
+            on delete cascade,
+    constraint detalle_menus_ibfk_2
+        foreign key (plato_id) references platos (id)
+);
 
----
+create index if not exists plato_id
+    on detalle_menus (plato_id);
 
--- TABLA: platos (Campos simplificados)
-CREATE TABLE platos (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    categoria_id INT NOT NULL,
-    nombre VARCHAR(150) NOT NULL,
-    descripcion TEXT NOT NULL,
-    precio DECIMAL(10,2) NOT NULL,
-    tiempo_preparacion_min INT, 
-    es_vegetariano BOOLEAN DEFAULT FALSE,
-    status ENUM('disponible','agotado','descontinuado') DEFAULT 'disponible',
-    FOREIGN KEY (categoria_id) REFERENCES categorias_menu(id) ON DELETE RESTRICT,
-    INDEX idx_categoria(categoria_id),
-    INDEX idx_status(status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+create index if not exists idx_categoria
+    on platos (categoria_id);
 
-INSERT INTO platos (categoria_id, nombre, descripcion, precio, tiempo_preparacion_min, es_vegetariano, status) VALUES
-(1,'Anticuchos','Corazón de res marinado',25.00,30,FALSE,'disponible'),
-(2,'Lomo saltado','Carne de res, cebolla y papas fritas',35.00,25,FALSE,'disponible'),
-(2,'Ensalada de quinua','Ensalada fresca de quinua',18.00,15,TRUE,'disponible');
+create index if not exists idx_status
+    on platos (status);
 
--- ------------------------------
--- TABLAS TRANSACCIONALES OPTIMIZADAS
--- ------------------------------
+create table if not exists reclamaciones
+(
+    id_reclamacion         int auto_increment
+        primary key,
+    codigo_reclamo         varchar(20)                                not null,
+    fecha_registro         timestamp      default current_timestamp() not null,
+    estado                 varchar(50)    default 'Pendiente'         not null,
+    fecha_respuesta_limite date                                       null,
+    tipo_documento         varchar(10)                                not null,
+    numero_documento       varchar(20)                                not null,
+    nombre_consumidor      varchar(100)                               not null,
+    domicilio              varchar(255)                               not null,
+    telefono               varchar(20)                                not null,
+    email                  varchar(100)                               not null,
+    tipo_bien              enum ('producto', 'servicio')              not null,
+    monto_reclamado        decimal(10, 2) default 0.00                null,
+    descripcion_bien       text                                       not null,
+    tipo_solicitud         enum ('reclamo', 'queja')                  not null,
+    detalle                text                                       not null,
+    pedido_consumidor      text                                       not null,
+    detalle_respuesta      text                                       null,
+    fecha_respuesta        date                                       null,
+    constraint codigo_reclamo
+        unique (codigo_reclamo)
+);
 
--- TABLA: reservas (Mesa eliminada, usuario opcional)
-CREATE TABLE reservas (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    -- mesa_id eliminada: la asignación la hace el administrador después.
-    mesa_asignada_id INT, -- Nuevo campo, la mesa se asigna después. Puede ser NULL.
-    usuario_id INT, -- NULL si es cliente anónimo (no logueado)
-    
-    -- Datos del cliente anónimo (requeridos por el formulario)
-    name VARCHAR(100) NOT NULL,
-    email VARCHAR(100) NOT NULL,
-    guests INT NOT NULL, 
-    
-    reserva_at DATETIME NOT NULL, 
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    notas TEXT,
-    
-    -- Flujo de aprobación UX: pendiente (inicial) -> confirmada/cancelada
-    status ENUM('pendiente','confirmada','completada','cancelada','no_asistio') DEFAULT 'pendiente',
-    
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL,
-    FOREIGN KEY (mesa_asignada_id) REFERENCES mesas(id) ON DELETE SET NULL,
-    INDEX idx_reserva_at(reserva_at),
-    INDEX idx_status(status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+create index if not exists idx_reclamaciones_documento
+    on reclamaciones (numero_documento);
 
-INSERT INTO reservas (name, email, guests, reserva_at, notas, status) VALUES
-('Juan Pérez', 'juan.perez@gmail.com', 6, '2025-12-01 19:00:00', 'Cumpleaños', 'pendiente'), -- Pendiente
-('Carlos López', 'carlos.anonimo@test.com', 2, '2025-12-01 20:30:00', 'Cena romántica', 'pendiente'), -- Pendiente
-('Luisa Fernández', 'luisa.fernandez@web.com', 4, '2025-12-02 18:00:00', 'Reunión familiar', 'pendiente'); -- Pendiente
+create index if not exists idx_reclamaciones_estado
+    on reclamaciones (estado);
 
-UPDATE reservas SET mesa_asignada_id = 3, status = 'confirmada' WHERE id = 1; -- Asignación y confirmación posterior
+create table if not exists usuarios
+(
+    id        int auto_increment
+        primary key,
+    nombres   varchar(100)                                                not null,
+    apellidos varchar(100)                                                not null,
+    email     varchar(100)                                                not null,
+    password  varchar(255)                                                not null,
+    rol       enum ('cliente', 'admin', 'moza')         default 'cliente' not null,
+    status    enum ('activo', 'inactivo', 'suspendido') default 'activo'  null,
+    constraint email
+        unique (email)
+);
 
----
+create table if not exists pedidos
+(
+    id           int auto_increment
+        primary key,
+    mesa_id      int                                                                                                 not null,
+    moza_id      int                                                                                                 null,
+    fecha_pedido timestamp                                                               default current_timestamp() not null,
+    total        decimal(10, 2)                                                                                      not null,
+    metodo_pago  enum ('efectivo', 'tarjeta', 'yape', 'plin', 'transferencia')           default 'efectivo'          null,
+    status       enum ('abierto', 'en_preparacion', 'listo_pago', 'pagado', 'cancelado') default 'abierto'           null,
+    constraint pedidos_ibfk_1
+        foreign key (mesa_id) references mesas (id),
+    constraint pedidos_ibfk_2
+        foreign key (moza_id) references usuarios (id)
+            on delete set null
+);
 
--- TABLA: pedidos (Solo vinculada a la mesa y al total)
-CREATE TABLE pedidos (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    mesa_id INT NOT NULL,
-    fecha_pedido TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    total DECIMAL(10,2) NOT NULL,
-    metodo_pago ENUM('efectivo','tarjeta','yape','plin','transferencia') DEFAULT 'efectivo',
-    notas_especiales TEXT,
-    status ENUM('pendiente','en_preparacion','listo','entregado','cancelado') DEFAULT 'pendiente',
-    FOREIGN KEY (mesa_id) REFERENCES mesas(id) ON DELETE RESTRICT,
-    INDEX idx_fecha(fecha_pedido),
-    INDEX idx_status(status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+create table if not exists detalle_pedidos
+(
+    id              int auto_increment
+        primary key,
+    pedido_id       int            not null,
+    plato_id        int            null,
+    menu_id         int            null,
+    cantidad        int default 1  not null,
+    precio_unitario decimal(10, 2) not null,
+    subtotal        decimal(10, 2) as (`cantidad` * `precio_unitario`) stored,
+    notas           varchar(255)   null,
+    constraint detalle_pedidos_ibfk_1
+        foreign key (pedido_id) references pedidos (id)
+            on delete cascade,
+    constraint detalle_pedidos_ibfk_2
+        foreign key (plato_id) references platos (id),
+    constraint detalle_pedidos_ibfk_3
+        foreign key (menu_id) references menus (id)
+);
 
-INSERT INTO pedidos (mesa_id, total, metodo_pago, notas_especiales, status) VALUES
-(4, 180.00, 'tarjeta', 'Sin cebolla', 'entregado'),
-(1, 110.00, 'efectivo', 'Poco picante', 'en_preparacion'),
-(2, 150.00, 'yape', 'Extra salsa', 'pendiente');
+create index if not exists idx_pedido
+    on detalle_pedidos (pedido_id);
 
----
+create index if not exists menu_id
+    on detalle_pedidos (menu_id);
 
--- TABLA: detalle_pedidos
-CREATE TABLE detalle_pedidos (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    pedido_id INT NOT NULL,
-    plato_id INT NOT NULL,
-    cantidad INT NOT NULL DEFAULT 1,
-    precio_unitario DECIMAL(10,2) NOT NULL,
-    subtotal DECIMAL(10,2) AS (cantidad * precio_unitario) STORED,
-    notas VARCHAR(255), 
-    status ENUM('pendiente','preparando','listo','entregado') DEFAULT 'pendiente',
-    FOREIGN KEY (pedido_id) REFERENCES pedidos(id) ON DELETE CASCADE,
-    FOREIGN KEY (plato_id) REFERENCES platos(id) ON DELETE RESTRICT,
-    INDEX idx_pedido(pedido_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+create index if not exists plato_id
+    on detalle_pedidos (plato_id);
 
-INSERT INTO detalle_pedidos (pedido_id, plato_id, cantidad, precio_unitario, notas, status) VALUES
-(1, 1, 2, 25.00, 'Término medio', 'entregado'),
-(1, 2, 2, 35.00, 'Sin sal', 'entregado'),
-(2, 3, 1, 18.00, 'Caliente', 'preparando');
+create index if not exists idx_fecha
+    on pedidos (fecha_pedido);
 
--- FIN DEL SCRIPT
-SELECT 'Base de datos SUMAK MIKUY finalizada. Las reservas no requieren mesa ni login del cliente.' AS mensaje;
+create index if not exists idx_status
+    on pedidos (status);
+
+create index if not exists mesa_id
+    on pedidos (mesa_id);
+
+create index if not exists moza_id
+    on pedidos (moza_id);
+
+create table if not exists reservas
+(
+    id               int auto_increment
+        primary key,
+    mesa_asignada_id int                                                                                           null,
+    usuario_id       int                                                                                           null,
+    name             varchar(100)                                                                                  not null,
+    email            varchar(100)                                                                                  not null,
+    guests           int                                                                                           not null,
+    reserva_at       datetime                                                                                      not null,
+    notas            text                                                                                          null,
+    status           enum ('pendiente', 'confirmada', 'completada', 'cancelada', 'no_asistio') default 'pendiente' null,
+    constraint reservas_ibfk_1
+        foreign key (usuario_id) references usuarios (id)
+            on delete set null,
+    constraint reservas_ibfk_2
+        foreign key (mesa_asignada_id) references mesas (id)
+            on delete set null
+);
+
+create index if not exists idx_reserva_at
+    on reservas (reserva_at);
+
+create index if not exists idx_status
+    on reservas (status);
+
+create index if not exists mesa_asignada_id
+    on reservas (mesa_asignada_id);
+
+create index if not exists usuario_id
+    on reservas (usuario_id);
+
+create index if not exists idx_email
+    on usuarios (email);
+
+create index if not exists idx_rol
+    on usuarios (rol);
+

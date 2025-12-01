@@ -1,0 +1,470 @@
+{% extends "base_admin.html" %}
+
+{% block content %}
+<div class="p-4 sm:p-6 space-y-6">
+    
+    <div class="bg-white p-4 rounded-xl shadow-md border-b-4 border-blue-600">
+        <h2 class="text-xl font-bold text-gray-800 mb-3 flex items-center">
+            <i data-lucide="utensils" class="w-5 h-5 mr-2 text-blue-600"></i> Gestión de Comandas y Mesas
+        </h2>
+        
+        <button onclick="openNewComandaModal()" class="w-full flex items-center justify-center 
+             px-4 py-3 text-base font-semibold rounded-lg 
+             text-white bg-blue-600 hover:bg-blue-700 transition duration-300 shadow-lg">
+            <i data-lucide="plus-circle" class="w-5 h-5 mr-2"></i>
+            Nueva Comanda Rápida
+        </button>
+    </div>
+
+    <div class="bg-gray-50 p-3 rounded-lg flex flex-wrap gap-x-4 gap-y-2 text-xs sm:text-sm text-gray-700 shadow-sm">
+        <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-green-500 mr-1.5"></span> **Disponible** (Libre)</span>
+        <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-red-600 mr-1.5"></span> **Ocupada/Abierta** (Comanda)</span>
+        <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-yellow-500 mr-1.5"></span> **Reservada** (Próxima)</span>
+        <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-orange-500 mr-1.5"></span> **Pendiente Pago**</span>
+        <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-gray-400 mr-1.5"></span> Inactiva</span>
+    </div>    
+
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+        
+        {% for mesa in mesas %}
+            
+            {% set mesa_status_display = 'Disponible' %}
+            {% set status_class = 'bg-green-500 border-green-700 hover:bg-green-600' %}
+            {% set icon = 'utensils' %}
+            {% set action_text = 'Iniciar Comanda' %}
+            {% set is_comanda_action = false %}
+            {% set comanda_id = none %}
+
+            {% if mesa.pedido_id %}
+                {% set comanda_id = mesa.pedido_id %}
+                {% set is_comanda_action = true %}
+                
+                {% if mesa.pedido_status == 'listo_pago' %}
+                    {% set mesa_status_display = 'Pendiente Pago' %}
+                    {% set status_class = 'bg-orange-500 border-orange-700 hover:bg-orange-600' %}
+                    {% set icon = 'credit-card' %}
+                    {% set action_text = 'Cobrar' %}
+                {% elif mesa.pedido_status == 'en_preparacion' %}
+                    {% set mesa_status_display = 'En Preparación' %}
+                    {% set status_class = 'bg-red-500 border-red-700 hover:bg-red-600' %}
+                    {% set icon = 'clipboard-list' %}
+                    {% set action_text = 'Ver Comanda' %}
+                {% else %} {# Abierto #}
+                    {% set mesa_status_display = 'Ocupada/Abierta' %}
+                    {% set status_class = 'bg-red-600 border-red-800 hover:bg-red-700' %}
+                    {% set icon = 'clipboard-list' %}
+                    {% set action_text = 'Ver Comanda' %}
+                {% endif %}
+            
+            {% elif mesa.mesa_status == 'reservada' %}
+                {% set mesa_status_display = 'Reservada' %}
+                {% set status_class = 'bg-yellow-500 border-yellow-700 hover:bg-yellow-600' %}
+                {% set icon = 'calendar' %}
+                {% set action_text = 'Ver Reserva' %}
+                {% set is_comanda_action = false %}
+            
+            {% elif mesa.mesa_status == 'inactiva' %}
+                {% set mesa_status_display = 'Inactiva' %}
+                {% set status_class = 'bg-gray-400 border-gray-600 opacity-80' %}
+                {% set icon = 'slash' %}
+                {% set action_text = 'Inactiva' %}
+                {% set is_comanda_action = false %}
+            {% endif %}
+
+            <div class="relative p-4 sm:p-5 rounded-xl shadow-xl border-b-4 
+                         cursor-pointer transform transition duration-300 
+                         {% if mesa.mesa_status != 'inactiva' %}hover:scale-[1.05]{% endif %} text-white
+                         {{ status_class }}"
+                onclick="viewMesaDetails({{ mesa | tojson }})">
+                
+                <div class="flex flex-col items-center justify-center space-y-1">
+                    <i data-lucide="{{ icon }}" class="w-7 h-7 sm:w-8 sm:h-8 mb-1"></i>
+                    
+                    <span class="text-2xl sm:text-3xl font-extrabold tracking-wide">
+                        # {{ mesa.numero }}
+                    </span>
+                    
+                    <p class="text-xs sm:text-sm font-semibold uppercase mt-1 px-2 py-0.5 rounded-full bg-black bg-opacity-10">
+                        {{ mesa_status_display }}
+                    </p>
+                </div>
+                
+                <hr class="mt-3 mb-2 border-white border-opacity-30">
+
+                <p class="text-xs font-light text-center">Capacidad: **{{ mesa.capacidad }}** pers.</p>
+                
+                {% if mesa.pedido_id %}
+                    <p class="text-sm font-bold text-center mt-1">Total: S/ {{ "%.2f" | format(mesa.pedido_total) }}</p>
+                {% endif %}
+                
+                <div class="mt-3 text-center">
+                    {# MODIFICACIÓN CLAVE: Si es una comanda activa (is_comanda_action=true), usamos la función de navegación #}
+                    {% if is_comanda_action %}
+                        <button onclick="navigateComandaAction(event, '{{ comanda_id }}', '{{ mesa.pedido_status }}')" 
+                                class="text-xs font-medium py-1 px-3 rounded-full bg-white text-gray-800 hover:bg-gray-200 transition">
+                            {{ action_text }}
+                        </button>
+                    {% else %}
+                        {# Para mesas disponibles, se sigue usando viewMesaDetails o un botón de acción simple #}
+                        <button class="text-xs font-medium py-1 px-3 rounded-full bg-white text-gray-800 hover:bg-gray-200 transition pointer-events-none">
+                            {{ action_text }}
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        {% else %}
+            <p class="col-span-full text-center text-gray-500 p-8 bg-white rounded-xl shadow-md">No hay mesas configuradas o activas en el sistema.</p>
+        {% endfor %}
+
+    </div>
+</div>
+
+<div id="newComandaModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-2xl w-full max-w-2xl mx-4 p-6 relative">
+        <h3 class="text-xl font-bold mb-4 text-gray-800">Crear Nueva Comanda</h3>
+        
+        <form id="newComandaForm" action="{{ url_for('new_comanda') }}" method="POST">
+            <div class="mb-4">
+                <label for="modal_mesa_id" class="block text-sm font-medium text-gray-700">Asignar Mesa *</label>
+                <select id="modal_mesa_id" name="mesa_id" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                    <option value="">Selecciona una Mesa</option>
+                    {% for mesa_id, mesa_data in comandas_activas.items() %}
+                        {# Solo mostrar mesas disponibles que no tienen un pedido activo #}
+                        {% if not mesa_data.pedido_id and mesa_data.mesa_status == 'disponible' %}
+                            <option value="{{ mesa_id }}">Mesa #{{ mesa_data.numero }} (Cap: {{ mesa_data.capacidad }})</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="max-h-80 overflow-y-auto border p-3 rounded-lg mb-4">
+                <h4 class="font-semibold mb-2">Selección de Platos (A la Carta)</h4>
+                {% if platos_a_la_carta %}
+                    {% for plato in platos_a_la_carta %}
+                    <div class="flex justify-between items-center py-1 border-b last:border-b-0">
+                        <div class="flex-1">
+                            <span class="font-medium text-gray-800">{{ plato.nombre }}</span> 
+                            <span class="text-xs text-gray-500">({{ plato.categoria }})</span>
+                        </div>
+                        <div class="text-right flex items-center">
+                            <span class="text-sm font-semibold text-green-700 mr-3">S/ {{ "%.2f" | format(plato.precio) }}</span>
+                            <input type="number" min="0" value="0" data-plato-id="{{ plato.id }}" 
+                                    data-nombre="{{ plato.nombre }}" data-precio="{{ plato.precio }}"
+                                    onchange="calculateTotal()"
+                                    class="w-16 text-center border rounded p-1 text-sm quantity-input">
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-sm text-gray-500">No hay platos a la carta disponibles.</p>
+                {% endif %}
+                
+                {% if menu_del_dia %}
+                    <h4 class="font-semibold my-2 mt-4 text-blue-700">Menú del Día (S/ {{ "%.2f" | format(menu_del_dia.precio_fijo) }})</h4>
+                    <div class="text-sm text-gray-600 mb-2">
+                        {% for tipo, items in menu_del_dia.items.items() %}
+                            <p class="ml-2">**{{ tipo }}:** {{ items | map(attribute='nombre') | join(', ') }}</p>
+                        {% endfor %}
+                    </div>
+                    <div class="flex justify-between items-center py-1 border-b">
+                        <span class="font-medium text-gray-800">Menú Completo</span>
+                        <div class="text-right flex items-center">
+                            <span class="text-sm font-semibold text-blue-700 mr-3">S/ {{ "%.2f" | format(menu_del_dia.precio_fijo) }}</span>
+                            <input type="number" min="0" value="0" data-menu-id="{{ menu_del_dia.id }}" 
+                                    data-nombre="Menú del Día" data-precio="{{ menu_del_dia.precio_fijo }}"
+                                    onchange="calculateTotal()"
+                                    class="w-16 text-center border rounded p-1 text-sm menu-input">
+                        </div>
+                    </div>
+                {% else %}
+                    <p class="text-sm text-gray-500 mt-4">No hay menú del día activo.</p>
+                {% endif %}
+            </div>
+            
+            <div class="text-right font-bold text-lg mb-4">
+                Total Estimado: <span id="comandaTotal">S/ 0.00</span>
+            </div>
+
+            <input type="hidden" name="items" id="itemsInput">
+            
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="closeModal('newComandaModal')" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">
+                    Cancelar
+                </button>
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700" onclick="prepareAndSubmitComanda(event)">
+                    <i data-lucide="send" class="w-4 h-4 inline-block mr-1"></i> Enviar a Cocina
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="detailsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-2xl w-full max-w-lg mx-4 p-6 relative">
+        <h3 class="text-xl font-bold mb-4 text-gray-800" id="detailMesaTitle"></h3>
+        
+        <div id="detailContent" class="space-y-3">
+            </div>
+
+        <div class="mt-6 flex justify-end space-x-3" id="detailActions">
+            <button type="button" onclick="closeModal('detailsModal')" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">
+                Cerrar
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Variables globales (Datos del servidor inyectados por Jinja)
+    const comandasActivas = {{ comandas_activas | tojson }};
+    const platosCarta = {{ platos_a_la_carta | tojson }};
+    const menuDelDia = {{ menu_del_dia | tojson | default('null') }};
+
+    /**
+     * Abre un modal por ID.
+     */
+    function openModal(id) {
+        document.getElementById(id).style.display = 'flex';
+    }
+
+    /**
+     * Cierra un modal por ID.
+     */
+    function closeModal(id) {
+        document.getElementById(id).style.display = 'none';
+    }
+    
+    /**
+     * Abre el modal para crear una nueva comanda y resetea el formulario.
+     */
+    function openNewComandaModal() {
+        document.getElementById('newComandaForm').reset();
+        document.querySelectorAll('.quantity-input, .menu-input').forEach(input => {
+            input.value = 0;
+        });
+        document.getElementById('comandaTotal').textContent = 'S/ 0.00';
+        document.getElementById('modal_mesa_id').value = ""; 
+        openModal('newComandaModal');
+    }
+
+    /**
+     * Calcula el total de la comanda en el modal y actualiza el campo oculto JSON.
+     */
+    function calculateTotal() {
+        let total = 0;
+        let items = [];
+
+        // 1. Platos a la carta
+        document.querySelectorAll('.quantity-input').forEach(input => {
+            const cantidad = parseInt(input.value) || 0;
+            const precio = parseFloat(input.dataset.precio);
+            const platoId = input.dataset.platoId;
+            
+            if (cantidad > 0) {
+                total += cantidad * precio;
+                items.push({
+                    plato_id: platoId,
+                    menu_id: null,
+                    cantidad: cantidad,
+                    precio: precio,
+                    tipo: 'plato_carta'
+                });
+            }
+        });
+
+        // 2. Menú del día
+        document.querySelectorAll('.menu-input').forEach(input => {
+            const cantidad = parseInt(input.value) || 0;
+            const precio = parseFloat(input.dataset.precio);
+            const menuId = input.dataset.menuId;
+            
+            if (cantidad > 0) {
+                total += cantidad * precio;
+                items.push({
+                    plato_id: null,
+                    menu_id: menuId,
+                    cantidad: cantidad,
+                    precio: precio,
+                    tipo: 'menu_dia'
+                });
+            }
+        });
+
+        document.getElementById('comandaTotal').textContent = 'S/ ' + total.toFixed(2);
+        document.getElementById('itemsInput').value = JSON.stringify(items);
+    }
+    
+    /**
+     * Valida y prepara la comanda antes de enviarla.
+     */
+    function prepareAndSubmitComanda(event) {
+        calculateTotal(); // Asegura que el JSON esté actualizado
+        
+        const mesaId = document.getElementById('modal_mesa_id').value;
+        const items = JSON.parse(document.getElementById('itemsInput').value);
+
+        if (!mesaId) {
+            showCustomAlert('Error', 'Debe seleccionar una mesa antes de enviar la comanda.', 'red');
+            event.preventDefault();
+            return;
+        }
+
+        if (items.length === 0) {
+            showCustomAlert('Error', 'Debe agregar al menos un ítem a la comanda.', 'red');
+            event.preventDefault();
+            return;
+        }
+        
+        showCustomAlert('Comanda Enviada', 'La comanda se está procesando...', 'blue');
+    }
+    
+    // 💡 NUEVA FUNCIÓN: Navegación para el botón del card
+    function navigateComandaAction(event, comandaId, status) {
+        event.stopPropagation(); // Evita que se active el onclick del div padre (viewMesaDetails)
+        
+        if (status === 'listo_pago') {
+            // Acción para Cobrar
+            window.location.href = `/moza/comandas/pago/${comandaId}`;
+        } else {
+            // Acción para Ver/Editar Comanda (abierto, en_preparacion)
+            window.location.href = `/moza/comandas/detail/${comandaId}`;
+        }
+    }
+
+
+    /**
+     * Muestra el detalle de una mesa, con acciones según su estado.
+     */
+    function viewMesaDetails(mesa) {
+        const titleEl = document.getElementById('detailMesaTitle');
+        const contentEl = document.getElementById('detailContent');
+        const actionsEl = document.getElementById('detailActions');
+        
+        titleEl.textContent = `Detalle Mesa #${mesa.numero}`;
+        contentEl.innerHTML = `
+            <p><span class="font-semibold">ID Mesa:</span> ${mesa.mesa_id}</p>
+            <p><span class="font-semibold">Estado Mesa:</span> <span class="uppercase font-bold text-sm text-${getStatusColor(mesa.mesa_status, mesa.pedido_status)}">${mesa.mesa_status}</span></p>
+        `;
+        actionsEl.innerHTML = '';
+        
+        let actionButtons = '';
+        
+        if (mesa.pedido_id) {
+            contentEl.innerHTML += `
+                <hr class="my-2 border-gray-200">
+                <h4 class="font-bold text-lg text-red-600">Comanda Activa #${mesa.pedido_id}</h4>
+                <p><span class="font-semibold">Estado Comanda:</span> <span class="uppercase">${mesa.pedido_status.replace('_', ' ')}</span></p>
+                <p><span class="font-semibold">Total:</span> <span class="text-xl font-extrabold text-red-600">S/ ${mesa.pedido_total.toFixed(2)}</span></p>
+            `;
+            
+            // Botones para pedidos abiertos/listos
+            if (mesa.pedido_status === 'abierto' || mesa.pedido_status === 'en_preparacion') {
+                actionButtons += `
+                    <a href="/moza/comandas/detail/${mesa.pedido_id}" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 flex items-center">
+                        <i data-lucide="eye" class="w-4 h-4 inline-block mr-1"></i> Ver/Editar Ítems
+                    </a>
+                    <button onclick="changeStatus(${mesa.pedido_id}, 'listo_pago')" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center">
+                        <i data-lucide="bell" class="w-4 h-4 inline-block mr-1"></i> Pedir la Cuenta
+                    </button>
+                    `;
+            } else if (mesa.pedido_status === 'listo_pago') {
+                actionButtons += `
+                    <a href="/moza/comandas/pago/${mesa.pedido_id}" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center">
+                        <i data-lucide="wallet" class="w-4 h-4 inline-block mr-1"></i> Cobrar y Cerrar
+                    </a>
+                `;
+            }
+        } else if (mesa.mesa_status === 'disponible') {
+             actionButtons += `
+                 <button onclick="openNewComandaModalForTable(${mesa.mesa_id})" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center">
+                     <i data-lucide="plus-circle" class="w-4 h-4 inline-block mr-1"></i> Nueva Comanda
+                 </button>
+                `;
+        }
+        
+        // Botón de cerrar siempre al final
+        actionsEl.innerHTML = actionButtons + `<button type="button" onclick="closeModal('detailsModal')" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">Cerrar</button>`;
+        
+        // Re-renderizar iconos de Lucide dentro del modal
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+
+        openModal('detailsModal');
+    }
+
+    // El resto de funciones (getStatusColor, openNewComandaModalForTable, changeStatus, showCustomAlert, lucide.createIcons) permanece igual.
+    // ... (El resto de funciones JS que no se modificaron: getStatusColor, openNewComandaModalForTable, changeStatus, showCustomAlert, y el DOMContentLoaded) ...
+    
+    /**
+     * Determina el color del estado para Tailwind.
+     */
+    function getStatusColor(mesaStatus, pedidoStatus) {
+        if (pedidoStatus === 'listo_pago') return 'orange-500';
+        if (pedidoStatus === 'abierto' || pedidoStatus === 'en_preparacion') return 'red-600';
+        if (mesaStatus === 'disponible') return 'green-500';
+        if (mesaStatus === 'reservada') return 'yellow-500';
+        return 'gray-500'; // Default o inactiva
+    }
+    
+    /**
+     * Abre el modal de nueva comanda y preselecciona la mesa.
+     */
+    function openNewComandaModalForTable(mesaId) {
+        openNewComandaModal();
+        document.getElementById('modal_mesa_id').value = mesaId; 
+        closeModal('detailsModal');
+    }
+    
+    /**
+     * Simula el cambio de estado de una comanda (requiere un endpoint POST real).
+     */
+    function changeStatus(pedidoId, newStatus) {
+        if (confirm(`¿Está seguro de cambiar el estado de la comanda #${pedidoId} a "${newStatus.replace('_', ' ')}"?`)) {
+            showCustomAlert('Simulación', `El estado de la comanda #${pedidoId} se ha cambiado a ${newStatus}.`, 'orange');
+            setTimeout(() => {
+                window.location.reload(); 
+            }, 1000); 
+        }
+    }
+    
+    /**
+     * Función personalizada para reemplazar alert() (requiere implementación de UI).
+     */
+    function showCustomAlert(title, message, color) {
+        console.log(`[${title} - ${color.toUpperCase()}]: ${message}`);
+        const alertBox = document.createElement('div');
+        alertBox.innerHTML = `
+            <div id="customAlert" class="fixed top-5 right-5 p-4 rounded-lg shadow-xl text-white z-[100] 
+                                         bg-${color}-600 border border-${color}-800 transition-opacity duration-300 opacity-0" 
+                                         style="min-width: 250px;">
+                <p class="font-bold">${title}</p>
+                <p class="text-sm">${message}</p>
+            </div>
+        `;
+        document.body.appendChild(alertBox);
+        
+        setTimeout(() => {
+            document.getElementById('customAlert').style.opacity = '1';
+        }, 10);
+        
+        setTimeout(() => {
+            const alert = document.getElementById('customAlert');
+            if (alert) {
+                alert.style.opacity = '0';
+                setTimeout(() => {
+                    alert.remove();
+                }, 300);
+            }
+        }, 3000);
+    }
+
+    // Inicializar Lucide Icons al cargar la página
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    });
+
+</script>
+{% endblock %}
