@@ -1,115 +1,230 @@
-{% extends "base_public.html" %}
-
-{% block content %}
+{% extends "base_public.html" %} {% block content %}
 <div class="space-y-16">
-    <header class="relative bg-gray-900 rounded-3xl overflow-hidden shadow-2xl">
-        <img src="{{ url_for('static', filename='images/experiencia1.png') }}" 
-             alt="Interior de restaurante con comida andina" 
-             class="w-full h-96 md:h-[500px] object-cover opacity-70">
-        
-        <div class="absolute inset-0 flex items-center justify-center p-8">
-            <div class="text-center text-white bg-black bg-opacity-40 p-6 rounded-2xl backdrop-blur-sm">
-                <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight mb-4">
-                    Sumak Mikuy
-                </h1>
-                <p class="text-lg sm:text-2xl font-light italic mb-8">
-                    La Fusión Perfecta entre Tradición y Sabor Andino
-                </p>
-                <a href="{{ url_for('reservas') }}" class="inline-flex items-center justify-center 
-                   px-8 py-3 border border-transparent text-base font-semibold rounded-full 
-                   text-white bg-yellow-500 hover:bg-yellow-600 transition duration-300 shadow-xl transform hover:scale-[1.02]">
-                    ¡Reserva tu Mesa Ahora!
-                    <i data-lucide="calendar" class="w-5 h-5 ml-2"></i>
-                </a>
-            </div>
-        </div>
-    </header>
+  <header class="relative bg-gray-600 rounded-3xl overflow-hidden shadow-2xl z-0">
+    <div id="heroCarousel" class="carousel-container w-full h-96 md:h-[500px]">
+      <img
+        src="{{ url_for('static', filename='images/experiencia1.png') }}"
+        alt="Interior de restaurante con comida andina 1"
+        class="carousel-image w-full h-full object-cover opacity-70 absolute inset-0 transition-opacity duration-1000 z-10"
+      />
+      <img
+        src="{{ url_for('static', filename='images/experiencia2.png') }}"
+        alt="Chef preparando un plato 2"
+        class="carousel-image w-full h-full object-cover opacity-0 absolute inset-0 transition-opacity duration-1000 z-0"
+      />
+      <img
+        src="{{ url_for('static', filename='images/experiencia3.png') }}"
+        alt="Plato principal andino 3"
+        class="carousel-image w-full h-full object-cover opacity-0 absolute inset-0 transition-opacity duration-1000 z-0"
+      />
+    </div>
+    <div class="absolute inset-0 flex items-center justify-center p-8 z-20">
+      <div
+        class="text-center text-white bg-transparent bg-opacity-9 p-6 rounded-2xl backdrop-blur-sm"
+      >
+        <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight mb-4">
+          Sumak Mikuy
+        </h1>
+        <p class="text-lg sm:text-2xl font-light italic mb-8">
+          La Fusión Perfecta entre Tradición y Sabor Andino
+        </p>
+        <a
+          id="reserveBtn"
+          href="{{ url_for('reservas') }}"
+          class="inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-semibold rounded-full text-white bg-yellow-500 hover:bg-yellow-600 transition duration-300 shadow-xl transform hover:scale-[1.02]"
+        >
+          ¡Reserva tu Mesa Ahora!
+          <i data-lucide="calendar" class="w-5 h-5 ml-2"></i>
+        </a>
+      </div>
+    </div>
+  </header>
 
-    <section class="grid md:grid-cols-2 gap-10 items-center py-8">
+  <section class="grid md:grid-cols-2 gap-10 items-center py-8">
+    <div>
+      <h2
+        class="text-3xl font-bold text-gray-900 mb-4 border-l-4 border-primary pl-4"
+      >
+        Nuestra Tradición
+      </h2>
+      <p class="text-gray-600 leading-relaxed">
+        En Sumak Mikuy, honramos la riqueza de los Andes. Cada plato es una
+        historia, utilizando ingredientes frescos y autóctonos de las tierras
+        altas. Nuestro compromiso es brindarte una experiencia culinaria
+        auténtica que despierte tus sentidos.
+      </p>
+      <ul class="mt-4 space-y-2 text-gray-700">
+        <li class="flex items-center">
+          <i data-lucide="utensils" class="w-5 h-5 mr-2 text-primary"></i>
+          Cocina de Autor y Tradicional
+        </li>
+        <li class="flex items-center">
+          <i data-lucide="leaf" class="w-5 h-5 mr-2 text-primary"></i>
+          Ingredientes 100% Frescos y Locales
+        </li>
+        <li class="flex items-center">
+          <i data-lucide="clock" class="w-5 h-5 mr-2 text-primary"></i> Ambiente
+          Cálido y Familiar
+        </li>
+      </ul>
+    </div>
+    <div class="rounded-2xl overflow-hidden shadow-xl">
+      <img
+        src="{{ url_for('static', filename='images/chef.png') }}"
+        alt="Chef preparando un plato"
+        class="w-full h-full object-cover"
+      />
+    </div>
+  </section>
+
+  <section
+    id="contacto"
+    class="bg-white p-8 md:p-12 rounded-3xl shadow-2xl border border-gray-100"
+  >
+    <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">
+      ¿Tienes Preguntas? Contáctanos
+    </h2>
+
+    <div class="grid md:grid-cols-2 gap-10">
+      <form id="contactanosForm" action="#" method="POST" class="space-y-6">
         <div>
-            <h2 class="text-3xl font-bold text-gray-900 mb-4 border-l-4 border-primary pl-4">Nuestra Tradición</h2>
-            <p class="text-gray-600 leading-relaxed">
-                En Sumak Mikuy, honramos la riqueza de los Andes. Cada plato es una historia, utilizando ingredientes frescos y autóctonos de las tierras altas. Nuestro compromiso es brindarte una experiencia culinaria auténtica que despierte tus sentidos.
-            </p>
-            <ul class="mt-4 space-y-2 text-gray-700">
-                <li class="flex items-center"><i data-lucide="utensils" class="w-5 h-5 mr-2 text-primary"></i> Cocina de Autor y Tradicional</li>
-                <li class="flex items-center"><i data-lucide="leaf" class="w-5 h-5 mr-2 text-primary"></i> Ingredientes 100% Frescos y Locales</li>
-                <li class="flex items-center"><i data-lucide="clock" class="w-5 h-5 mr-2 text-primary"></i> Ambiente Cálido y Familiar</li>
-            </ul>
+          <label for="name" class="block text-sm font-medium text-gray-700 mb-1"
+            >Nombre Completo</label
+          >
+          <input
+            type="text"
+            name="name"
+            id="name"
+            required
+            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-primary focus:border-primary transition duration-150 shadow-sm"
+          />
         </div>
-        <div class="rounded-2xl overflow-hidden shadow-xl">
-            <img src="{{ url_for('static', filename='images/chef.png') }}" alt="Chef preparando un plato" class="w-full h-full object-cover">
+        <div>
+          <label
+            for="email"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Correo Electrónico</label
+          >
+          <input
+            type="email"
+            name="email"
+            id="email"
+            required
+            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-primary focus:border-primary transition duration-150 shadow-sm"
+          />
         </div>
-    </section>
+        <div>
+          <label
+            for="message"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Tu Mensaje o Consulta</label
+          >
+          <textarea
+            name="message"
+            id="message"
+            rows="4"
+            required
+            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-primary focus:border-primary transition duration-150 shadow-sm"
+          ></textarea>
+        </div>
+        <button
+          type="submit"
+          id="enviarBtn"
+          class="w-full bg-primary text-secondary font-bold py-3 px-4 rounded-lg uppercase tracking-wider hover:bg-yellow-500 transition duration-300 shadow-md flex items-center justify-center disabled:opacity-50"
+        >
+          <i data-lucide="send" class="w-5 h-5 mr-2"></i>
+          Enviar Solicitud
+        </button>
 
-    <section id="contacto" class="bg-white p-8 md:p-12 rounded-3xl shadow-2xl border border-gray-100">
-        <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">
-            ¿Tienes Preguntas? Contáctanos
-        </h2>
-        
-        <div class="grid md:grid-cols-2 gap-10">
-            <form action="{{ url_for('contactanos') }}" method="POST" class="space-y-6">
-                <div>
-                    <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
-                    <input type="text" name="name" id="name" required
-                           class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-primary focus:border-primary transition duration-150 shadow-sm">
-                </div>
-                <div>
-                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
-                    <input type="email" name="email" id="email" required
-                           class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-primary focus:border-primary transition duration-150 shadow-sm">
-                </div>
-                <div>
-                    <label for="message" class="block text-sm font-medium text-gray-700 mb-1">Tu Mensaje o Consulta</label>
-                    <textarea name="message" id="message" rows="4" required
-                              class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-primary focus:border-primary transition duration-150 shadow-sm"></textarea>
-                </div>
-                <button type="submit" class="w-full flex items-center justify-center 
-                        px-6 py-3 border border-transparent text-base font-semibold rounded-xl 
-                        text-white bg-primary hover:bg-primary transition duration-300 shadow-md">
-                    Enviar Mensaje
-                    <i data-lucide="send" class="w-4 h-4 ml-2"></i>
-                </button>
-                
-                <p class="pt-4 text-center text-sm font-medium">
-                    <i data-lucide="alert-triangle" class="w-4 h-4 inline text-red-500 mr-1"></i>
-                    Para reclamos, accede al 
-                    <a href="{{ url_for('libro_reclamaciones_view') }}" class="text-red-600 hover:text-red-700 font-bold underline">
-                        Libro de Reclamaciones Virtual
-                    </a> 🇵🇪
-                </p>
-            </form>
+        <div
+          id="statusMessage"
+          class="mt-4 text-center font-semibold hidden"
+        ></div>
 
-            <div class="bg-gray-50 p-8 rounded-2xl space-y-6 shadow-inner">
-                <h3 class="text-xl font-semibold text-gray-900">Encuéntranos</h3>
-                <div class="space-y-4">
-                    <div class="flex items-start">
-                        <i data-lucide="map-pin" class="w-6 h-6 mr-3 text-primary flex-shrink-0"></i>
-                        <div>
-                            <p class="font-medium">Ubicación</p>
-                            <p class="text-gray-600">Av. Principal #123, Centro Histórico, Lima, Perú</p>
-                        </div>
-                    </div>
-                    <div class="flex items-start">
-                        <i data-lucide="phone" class="w-6 h-6 mr-3 text-primary flex-shrink-0"></i>
-                        <div>
-                            <p class="font-medium">Teléfono</p>
-                            <p class="text-gray-600">+51 987 654 321</p>
-                        </div>
-                    </div>
-                    <div class="flex items-start">
-                        <i data-lucide="mail" class="w-6 h-6 mr-3 text-primary flex-shrink-0"></i>
-                        <div>
-                            <p class="font-medium">Correo</p>
-                            <p class="text-gray-600">reservas@sumakmikuy.com</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="aspect-w-16 aspect-h-9 w-full h-48 bg-gray-200 rounded-xl overflow-hidden mt-6 flex items-center justify-center">
-                    <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d485.8615581462459!2d-76.42519590119761!3d-13.042516314258984!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x910ff85891a47299%3A0x58c768d675552c27!2sLaura%20Caller%2C%20San%20Luis%20de%20Ca%C3%B1ete%2015720!5e0!3m2!1ses-419!2spe!4v1764463522899!5m2!1ses-419!2spe" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-                </div>
+        <p class="pt-4 text-center text-sm font-medium">
+          <i
+            data-lucide="alert-triangle"
+            class="w-4 h-4 inline text-red-500 mr-1"
+          ></i>
+          Para reclamos, accede al
+          <a
+            href="{{ url_for('libro_reclamaciones_view') }}"
+            class="text-red-600 hover:text-red-700 font-bold underline"
+          >
+            Libro de Reclamaciones Virtual
+          </a>
+          🇵🇪
+        </p>
+      </form>
+
+      <div class="bg-gray-50 p-8 rounded-2xl space-y-6 shadow-inner">
+        <h3 class="text-xl font-semibold text-gray-900">Encuéntranos</h3>
+        <div class="space-y-4">
+          <div class="flex items-start">
+            <i
+              data-lucide="map-pin"
+              class="w-6 h-6 mr-3 text-primary flex-shrink-0"
+            ></i>
+            <div>
+              <p class="font-medium">Ubicación</p>
+              <p class="text-gray-600">
+                Av. Principal #123, Centro Histórico, Lima, Perú
+              </p>
             </div>
+          </div>
+          <div class="flex items-start">
+            <i
+              data-lucide="phone"
+              class="w-6 h-6 mr-3 text-primary flex-shrink-0"
+            ></i>
+            <div>
+              <p class="font-medium">Teléfono</p>
+              <p class="text-gray-600">+51 987 654 321</p>
+            </div>
+          </div>
+          <div class="flex items-start">
+            <i
+              data-lucide="mail"
+              class="w-6 h-6 mr-3 text-primary flex-shrink-0"
+            ></i>
+            <div>
+              <p class="font-medium">Correo</p>
+              <p class="text-gray-600">reservas@sumakmikuy.com</p>
+            </div>
+          </div>
         </div>
-    </section>
+        <div
+          class="aspect-w-16 aspect-h-9 w-full h-48 bg-gray-200 rounded-xl overflow-hidden mt-6 flex items-center justify-center"
+        >
+          <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d485.8615581462459!2d-76.42519590119761!3d-13.042516314258984!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x910ff85891a47299%3A0x58c768d675552c27!2sLaura%20Caller%2C%20San%20Luis%20de%20Ca%C3%B1ete%2015720!5e0!3m2!1ses-419!2spe!4v1764463522899!5m2!1ses-419!2spe"
+            width="600"
+            height="450"
+            style="border: 0"
+            allowfullscreen=""
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+          ></iframe>
+        </div>
+      </div>
+    </div>
+  </section>
 </div>
+
+<script
+  type="text/javascript"
+  src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"
+></script>
+
+<script type="text/javascript">
+  (function () {
+    emailjs.init("iJYZ-Aek_eioVmdjM");
+  })();
+</script>
+
+<script src="{{ url_for('static', filename='js/contactanos_logic.js') }}"></script>
+<script src="{{ url_for('static', filename='js/carousel_logic.js') }}"></script>
+<script src="{{ url_for('static', filename='js/contacto_animations.js') }}"></script>
+<script src="{{ url_for('static', filename='js/hero_reserve_animations.js') }}"></script>
+
 {% endblock %}
